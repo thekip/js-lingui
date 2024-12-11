@@ -2,7 +2,8 @@ import { nodesToString } from "./nodesToString"
 import React, { PropsWithChildren } from "react"
 import { getConsoleMockCalls, mockConsole } from "@lingui/jest-mocks"
 import { generateMessageId } from "@lingui/message-utils/generateMessageId"
-import { Plural } from "./TransNew"
+import { Plural, Select, SelectOrdinal } from "./TransNew"
+import { setLinguiToMessageFn } from "./meta-utils"
 
 describe("trans nodeToString", () => {
   describe("treat like other components (legacy)", () => {
@@ -16,13 +17,15 @@ describe("trans nodeToString", () => {
 
       expect(actual).toMatchInlineSnapshot(`
         {
-          "elements": {
+          "components": {
             "0": <br />,
           },
           "message": "lorem <0/> ipsum",
           "values": {},
         }
       `)
+
+      expect((actual.components["0"] as any).props.children).toBeFalsy()
     })
 
     it("should handle elements with children", () => {
@@ -34,7 +37,7 @@ describe("trans nodeToString", () => {
       const actual = nodesToString(fragment.props.children)
       expect(actual).toMatchInlineSnapshot(`
         {
-          "elements": {
+          "components": {
             "0": <strong />,
           },
           "message": "lorem <0>bold</0> ipsum",
@@ -52,7 +55,7 @@ describe("trans nodeToString", () => {
       const actual = nodesToString(fragment.props.children)
       expect(actual).toMatchInlineSnapshot(`
         {
-          "elements": {
+          "components": {
             "0": <i
               className="icon-gear"
             />,
@@ -79,7 +82,7 @@ describe("trans nodeToString", () => {
       const actual = nodesToString(fragment.props.children)
       expect(actual).toMatchInlineSnapshot(`
         {
-          "elements": {
+          "components": {
             "0": <ul />,
             "1": <li />,
             "2": <li />,
@@ -99,7 +102,7 @@ describe("trans nodeToString", () => {
     const actual = nodesToString(fragment.props.children)
     expect(actual).toMatchInlineSnapshot(`
       {
-        "elements": {},
+        "components": {},
         "message": "lorem {user} ipsum",
         "values": {
           "user": "hello!",
@@ -119,7 +122,7 @@ describe("trans nodeToString", () => {
 
       expect(actual).toMatchInlineSnapshot(`
         {
-          "elements": {},
+          "components": {},
           "message": "lorem  ipsum",
           "values": {},
         }
@@ -138,7 +141,7 @@ describe("trans nodeToString", () => {
 
       expect(actual).toMatchInlineSnapshot(`
         {
-          "elements": {},
+          "components": {},
           "message": "lorem  ipsum",
           "values": {},
         }
@@ -157,7 +160,7 @@ describe("trans nodeToString", () => {
 
       expect(actual).toMatchInlineSnapshot(`
         {
-          "elements": {},
+          "components": {},
           "message": "lorem  ipsum",
           "values": {},
         }
@@ -190,7 +193,7 @@ describe("Macro compatibility", () => {
       ...actual,
     }).toMatchInlineSnapshot(`
       {
-        "elements": {
+        "components": {
           "0": <strong />,
           "1": <br />,
           "2": <p />,
@@ -224,7 +227,7 @@ describe("Macro compatibility", () => {
       ...actual,
     }).toMatchInlineSnapshot(`
       {
-        "elements": {
+        "components": {
           "0": <Text />,
         },
         "id": "K/1Xpr",
@@ -235,7 +238,34 @@ describe("Macro compatibility", () => {
   })
 })
 
-describe("Plural", () => {
+test("Should use toMessage function of the custom component", () => {
+  const MyComponent = (props: { foo: string }) => null
+  setLinguiToMessageFn(MyComponent, (props, nodesToString, ctx) => {
+    ctx.values["test"] = 10
+
+    return "MyComponentToString_" + nodesToString(<>{props.foo}</>)
+  })
+
+  const fragment = (
+    <>
+      <MyComponent foo={"props.foo"} />
+    </>
+  )
+  const actual = nodesToString(fragment.props.children)
+  expect(actual).toMatchInlineSnapshot(`
+    {
+      "components": {
+        "1": <React.Fragment />,
+      },
+      "message": "MyComponentToString_<1>props.foo</1>",
+      "values": {
+        "test": 10,
+      },
+    }
+  `)
+})
+
+describe("ICU Components", () => {
   test("Should expand Plural component into icu string", () => {
     const count = 5
     const fragment = (
@@ -253,7 +283,7 @@ describe("Plural", () => {
     const actual = nodesToString(fragment.props.children)
     expect(actual).toMatchInlineSnapshot(`
       {
-        "elements": {
+        "components": {
           "1": <React.Fragment />,
           "2": <a
             href="/more"
@@ -283,8 +313,66 @@ describe("Plural", () => {
     const actual = nodesToString(fragment.props.children)
     expect(actual).toMatchInlineSnapshot(`
       {
-        "elements": {},
+        "components": {},
         "message": "{value, plural, one {# book} other {# books}}",
+        "values": {
+          "value": 5,
+        },
+      }
+    `)
+  })
+
+  test("Should expand Select component into icu string", () => {
+    const value = "female"
+
+    const fragment = (
+      <>
+        <Select
+          id="msg.select"
+          context={""}
+          value={value}
+          _male="He"
+          _female={`She`}
+          other={<strong>Other</strong>}
+        />
+      </>
+    )
+    const actual = nodesToString(fragment.props.children)
+
+    // todo: currently component will print id="msg.select" to icu string which is incorrect
+    //   see thoughts on the bottom, may be need to drop this properties completely
+    expect(actual).toMatchInlineSnapshot(`
+      {
+        "components": {
+          "1": <strong />,
+        },
+        "message": "{value, select, male {He} female {She} other {<1>Other</1>}}",
+        "values": {
+          "value": "female",
+        },
+      }
+    `)
+  })
+
+  test("Should expand SelectOrdinal component into icu string", () => {
+    const count = 5
+    const fragment = (
+      <>
+        <SelectOrdinal
+          value={count}
+          one="#st"
+          two={`#nd`}
+          other={<strong>#rd</strong>}
+        />
+      </>
+    )
+    const actual = nodesToString(fragment.props.children)
+    expect(actual).toMatchInlineSnapshot(`
+      {
+        "components": {
+          "1": <strong />,
+        },
+        "message": "{value, selectordinal, one {#st} two {#nd} other {<1>#rd</1>}}",
         "values": {
           "value": 5,
         },
@@ -309,3 +397,7 @@ describe("Plural", () => {
 // few={`${count} items`} is not supported, instead should be a fragment few={<>{{ count }} items</>}
 
 // what would be if we will have few plural expressions in one message? They will clash values
+
+// always wrap all icu into Trans?
+// it doesn't make sense to have a context (and other common props) and comment on a Plural since they could be a part
+// of bigger expression <Trans context><Plural context/></Trans>

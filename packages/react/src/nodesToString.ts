@@ -1,14 +1,14 @@
 import { cloneElement, isValidElement, ReactNode } from "react"
-import { getLinguiMeta, isLinguiComponent } from "./TransNew"
+import { getLinguiToMessageFn, isLinguiComponent } from "./meta-utils"
 
 type ReactChildren = ReactNode | ReactNode[]
 
-export const isString = (obj: unknown): obj is string => typeof obj === "string"
-export const isObject = (obj: unknown): obj is object =>
+const isString = (obj: unknown): obj is string => typeof obj === "string"
+const isObject = (obj: unknown): obj is object =>
   typeof obj === "object" && obj !== null
-export const isFunction = (f: unknown): f is Function => typeof f === "function"
+const isFunction = (f: unknown): f is Function => typeof f === "function"
 
-export const makeCounter =
+const makeCounter =
   (index = 0) =>
   () =>
     index++
@@ -19,14 +19,14 @@ export const nodesToString = (children: ReactChildren) => {
 
   return {
     message,
-    elements: ctx.elements,
+    components: ctx.components,
     values: ctx.values,
   }
 }
 
 class Ctx {
   elementIndex = makeCounter()
-  elements: Record<string, ReactNode> = {}
+  components: Record<string, ReactNode> = {}
   values: Record<string, unknown> = {}
 }
 
@@ -54,7 +54,7 @@ const _nodesToString = (children: ReactChildren, ctx: Ctx) => {
       const content = _nodesToString(props.children, ctx)
 
       if (isFunction(child.type) && isLinguiComponent(child.type as any)) {
-        const toMessage = getLinguiMeta(child.type as any)
+        const toMessage = getLinguiToMessageFn(child.type as any)
 
         stringNode += toMessage(
           child.props,
@@ -62,7 +62,7 @@ const _nodesToString = (children: ReactChildren, ctx: Ctx) => {
           ctx
         )
       } else {
-        ctx.elements[elemIndex] = cloneElement(child, props, [])
+        ctx.components[elemIndex] = cloneElement(child, props, null)
 
         if (!content) {
           // actual e.g. lorem <hr className="test" /> ipsum
