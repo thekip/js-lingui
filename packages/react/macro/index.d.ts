@@ -63,7 +63,7 @@ export const Trans: FC<TransProps>
  * <Trans id="{numBooks, plural, one {Book} other {Books}}" values={{ numBooks }} />
  * ```
  */
-export const Plural: VFC<PluralChoiceProps>
+export const Plural: FC<PluralChoiceProps>
 /**
  * Props of SelectOrdinal macro are transformed into selectOrdinal format.
  *
@@ -82,7 +82,7 @@ export const Plural: VFC<PluralChoiceProps>
  * />
  * ```
  */
-export const SelectOrdinal: VFC<PluralChoiceProps>
+export const SelectOrdinal: FC<PluralChoiceProps>
 
 /**
  * Props of Select macro are transformed into select format
@@ -101,7 +101,7 @@ export const SelectOrdinal: VFC<PluralChoiceProps>
  * />
  * ```
  */
-export const Select: VFC<SelectChoiceProps>
+export const Select: FC<SelectChoiceProps>
 
 declare function _t(descriptor: MacroMessageDescriptor): string
 declare function _t(
