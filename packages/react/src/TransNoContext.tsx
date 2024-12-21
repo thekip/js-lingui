@@ -1,4 +1,4 @@
-import React, { ComponentType } from "react"
+import React, { ComponentType, ReactNode } from "react"
 
 import { formatElements } from "./format"
 import type { MessageOptions } from "@lingui/core"
@@ -43,7 +43,7 @@ export function TransNoContext(
   props: TransProps & {
     lingui: { i18n: I18n; defaultComponent?: ComponentType<TransRenderProps> }
   }
-): React.ReactElement<any, any> | null {
+): ReactNode {
   const {
     render,
     component,
@@ -99,7 +99,7 @@ export function TransNoContext(
   if (render === null || component === null) {
     // Although `string` is a valid react element, types only allow `Element`
     // Upstream issue: https://github.com/DefinitelyTyped/DefinitelyTyped/issues/20544
-    return translation as unknown as React.ReactElement<any, any>
+    return translation
   }
 
   const FallbackComponent: React.ComponentType<TransRenderProps> =

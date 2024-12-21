@@ -1,18 +1,32 @@
 import {
-  Plural as PluralType,
+  CommonProps,
   PluralChoiceProps,
   Select as SelectType,
   SelectChoiceProps,
   SelectOrdinal as SelectOrdinalType,
 } from "../macro/index"
-import { ReactNode } from "react"
+import { type FC, ReactNode } from "react"
 import { generateMessageId } from "@lingui/message-utils/generateMessageId"
 
-const pluralRuleRe = /(_[\d\w]+|zero|one|two|few|many|other)/
+const pluralRuleRe = /^(_[\d\w]+|zero|one|two|few|many|other|offset)$/
 const jsx2icuExactChoice = (value: string) =>
   value.replace(/_(\d+)/, "=$1").replace(/_(\w+)/, "$1")
 
-export const Plural: typeof PluralType = (props) => null
+type LinguiContextLike = {
+  i18n: I18n
+  defaultComponent?: ComponentType<TransRenderProps>
+}
+
+export const Plural: FC<
+  PluralChoiceProps & {
+    lingui?: LinguiContextLike
+  }
+> = ({ context, comment, id, render, component, lingui, ...rest }) => (
+  <NewTransNoContext {...{ context, comment, id, render, component, lingui }}>
+    <Plural {...rest} />
+  </NewTransNoContext>
+)
+
 export const Select: typeof SelectType = (props) => null
 export const SelectOrdinal: typeof SelectOrdinalType = (props) => null
 
@@ -20,19 +34,27 @@ setLinguiToMessageFn(Plural, printArgExpression("plural"))
 setLinguiToMessageFn(Select, printArgExpression("select"))
 setLinguiToMessageFn(SelectOrdinal, printArgExpression("selectordinal"))
 
+const dropProps = new Set<keyof CommonProps>([
+  "id",
+  "comment",
+  "component",
+  "render",
+  "context",
+])
 function printArgExpression(
-  format: "plural" | "select" | "selectOrdinal"
+  format: "plural" | "select" | "selectordinal"
 ): LinguiToMessage<PluralChoiceProps | SelectChoiceProps> {
   return (props, nodesToString, ctx) => {
     const name = "value"
     const { value, ...options } = props
-    ctx.values[name] = value
+    ctx.addValue(name, value)
 
     const formatOptions = Object.keys(options)
+      .filter((key) => pluralRuleRe.test(key))
       .map((key) => {
         let value = (options as any)[key]
 
-        if (key === "offset" && format !== "select") {
+        if (key === "offset") {
           // offset has special syntax `offset:number`
           return `offset:${value}`
         }
@@ -41,11 +63,11 @@ function printArgExpression(
           value = nodesToString(value as ReactNode)
         }
 
-        if (pluralRuleRe.test(key)) {
-          return `${jsx2icuExactChoice(key)} {${value}}`
-        } else {
-          return `${key} {${value}}`
-        }
+        // if (pluralRuleRe.test(key)) {
+        return `${jsx2icuExactChoice(key)} {${value}}`
+        // } else {
+        //   return `${key} {${value}}`
+        // }
       })
       .join(" ")
 
@@ -59,7 +81,7 @@ import { formatElements } from "./format"
 import type { MessageOptions } from "@lingui/core"
 import { I18n } from "@lingui/core"
 import { LinguiToMessage, setLinguiToMessageFn } from "./meta-utils"
-import { nodesToString } from "./nodesToString"
+import { nodesToMessage } from "./nodesToMessage"
 
 export type TransRenderProps = {
   id: string
@@ -83,12 +105,10 @@ export type TransRenderCallbackOrComponent =
 type TransWithChildrenProps = {
   id?: string
   context?: string
+  // todo: add support for {{placeholder}}
   children: React.ReactNode
 }
 
-// common
-//  formats?: MessageOptions["formats"]
-//   comment?: string
 type TransWithMessageProps = {
   id: string
   message?: string
@@ -106,13 +126,13 @@ export type TransProps = {
 
 export function NewTransNoContext(
   props: TransProps & {
-    lingui: { i18n: I18n; defaultComponent?: ComponentType<TransRenderProps> }
+    lingui: LinguiContextLike
   }
 ): React.ReactElement<any, any> | null {
   if ("children" in props) {
     // TransWithChildren
     const { children, id, context, ...restProps } = props
-    const { values, message, components } = nodesToString(children)
+    const { values, message, components } = nodesToMessage(children)
 
     return (
       <TransNoContext
@@ -252,4 +272,6 @@ const RenderFragment = ({ children }: TransRenderProps) => {
   return <React.Fragment>{children}</React.Fragment>
 }
 
-// TODO we want to make Plural works separately from Trans as well, cover with tests
+setLinguiToMessageFn(NewTransNoContext, (props, nodesToString) => {
+  return nodesToString((props as TransWithChildrenProps).children)
+})

@@ -1,11 +1,11 @@
-import { nodesToString } from "./nodesToString"
+import { nodesToMessage } from "./nodesToMessage"
 import React, { PropsWithChildren } from "react"
 import { getConsoleMockCalls, mockConsole } from "@lingui/jest-mocks"
 import { generateMessageId } from "@lingui/message-utils/generateMessageId"
-import { Plural, Select, SelectOrdinal } from "./TransNew"
+import { NewTransNoContext, Plural, Select, SelectOrdinal } from "./TransNew"
 import { setLinguiToMessageFn } from "./meta-utils"
 
-describe("trans nodeToString", () => {
+describe("trans nodesToMessage", () => {
   describe("treat like other components (legacy)", () => {
     it("should handle self closed elements", () => {
       const fragment = (
@@ -13,7 +13,7 @@ describe("trans nodeToString", () => {
           lorem <br /> ipsum
         </>
       )
-      const actual = nodesToString(fragment.props.children)
+      const actual = nodesToMessage(fragment.props.children)
 
       expect(actual).toMatchInlineSnapshot(`
         {
@@ -34,7 +34,7 @@ describe("trans nodeToString", () => {
           lorem <strong>bold</strong> ipsum
         </>
       )
-      const actual = nodesToString(fragment.props.children)
+      const actual = nodesToMessage(fragment.props.children)
       expect(actual).toMatchInlineSnapshot(`
         {
           "components": {
@@ -52,7 +52,7 @@ describe("trans nodeToString", () => {
           lorem <i className="icon-gear" /> ipsum
         </>
       )
-      const actual = nodesToString(fragment.props.children)
+      const actual = nodesToMessage(fragment.props.children)
       expect(actual).toMatchInlineSnapshot(`
         {
           "components": {
@@ -79,7 +79,7 @@ describe("trans nodeToString", () => {
           {" ipsum"}
         </>
       )
-      const actual = nodesToString(fragment.props.children)
+      const actual = nodesToMessage(fragment.props.children)
       expect(actual).toMatchInlineSnapshot(`
         {
           "components": {
@@ -99,7 +99,7 @@ describe("trans nodeToString", () => {
 
   it("should print a variable placeholder", () => {
     const fragment = <>lorem {{ user: "hello!" }} ipsum</>
-    const actual = nodesToString(fragment.props.children)
+    const actual = nodesToMessage(fragment.props.children)
     expect(actual).toMatchInlineSnapshot(`
       {
         "components": {},
@@ -114,7 +114,7 @@ describe("trans nodeToString", () => {
   it("should warn when invalid interpolation object passed", () => {
     mockConsole((console) => {
       const fragment = <>lorem {{ foo: "hello!", bar: "" }} ipsum</>
-      const actual = nodesToString(fragment.props.children)
+      const actual = nodesToMessage(fragment.props.children)
 
       expect(getConsoleMockCalls(console.warn)).toMatchInlineSnapshot(
         `"Trans: the passed in object contained more than one variable - the object should look like {{ value }}."`
@@ -130,11 +130,67 @@ describe("trans nodeToString", () => {
     })
   })
 
+  it("should warn when two values with the same name are passed", () => {
+    mockConsole((console) => {
+      const fragment = (
+        <>
+          lorem {{ foo: "hello!" }} ipsum {{ foo: "ola!" }}
+        </>
+      )
+      const actual = nodesToMessage(fragment.props.children)
+
+      expect(getConsoleMockCalls(console.warn)).toMatchInlineSnapshot(`
+        "Lingui: you passed different values with the same name "foo".
+             Most likely it is not what you want. Las value will overwrite previous.
+             First value: "hello!"
+             Second value: "ola!""
+      `)
+
+      expect(actual).toMatchInlineSnapshot(`
+        {
+          "components": {},
+          "message": "lorem {foo} ipsum {foo}",
+          "values": {
+            "foo": "ola!",
+          },
+        }
+      `)
+    })
+  })
+
+  it("should warn when two values with the same name are passed", () => {
+    mockConsole((console) => {
+      const fragment = (
+        <>
+          lorem {{ foo: "hello!" }} ipsum {{ foo: "ola!" }}
+        </>
+      )
+      const actual = nodesToMessage(fragment.props.children)
+
+      expect(getConsoleMockCalls(console.warn)).toMatchInlineSnapshot(`
+        "Lingui: you passed different values with the same name "foo".
+             Most likely it is not what you want. Las value will overwrite previous.
+             First value: "hello!"
+             Second value: "ola!""
+      `)
+
+      expect(actual).toMatchInlineSnapshot(`
+        {
+          "components": {},
+          "message": "lorem {foo} ipsum {foo}",
+          "values": {
+            "foo": "ola!",
+          },
+        }
+      `)
+    })
+  })
+
   it("should warn when invalid interpolation passed", () => {
     mockConsole((console) => {
       const variable = 5
       const fragment = <>lorem {variable} ipsum</>
-      const actual = nodesToString(fragment.props.children)
+      const actual = nodesToMessage(fragment.props.children)
       expect(getConsoleMockCalls(console.warn)).toMatchInlineSnapshot(
         `"Trans: the passed in value is invalid - seems you passed in a variable like {number} - please pass in variables for interpolation as full objects like {{number}}."`
       )
@@ -153,7 +209,7 @@ describe("trans nodeToString", () => {
     mockConsole((console) => {
       const variable = null
       const fragment = <>lorem {variable} ipsum</>
-      const actual = nodesToString(fragment.props.children)
+      const actual = nodesToMessage(fragment.props.children)
       expect(getConsoleMockCalls(console.warn)).toMatchInlineSnapshot(
         `"Trans: the passed in value is invalid - seems you passed in a null child."`
       )
@@ -186,7 +242,7 @@ describe("Macro compatibility", () => {
       </>
     )
 
-    const actual = nodesToString(fragment.props.children)
+    const actual = nodesToMessage(fragment.props.children)
     const messageId = generateMessageId(actual.message)
     expect({
       id: messageId,
@@ -220,7 +276,7 @@ describe("Macro compatibility", () => {
       </>
     )
 
-    const actual = nodesToString(fragment.props.children)
+    const actual = nodesToMessage(fragment.props.children)
     const messageId = generateMessageId(actual.message)
     expect({
       id: messageId,
@@ -251,13 +307,13 @@ test("Should use toMessage function of the custom component", () => {
       <MyComponent foo={"props.foo"} />
     </>
   )
-  const actual = nodesToString(fragment.props.children)
+  const actual = nodesToMessage(fragment.props.children)
   expect(actual).toMatchInlineSnapshot(`
     {
       "components": {
-        "1": <React.Fragment />,
+        "0": <React.Fragment />,
       },
-      "message": "MyComponentToString_<1>props.foo</1>",
+      "message": "MyComponentToString_<0>props.foo</0>",
       "values": {
         "test": 10,
       },
@@ -280,16 +336,16 @@ describe("ICU Components", () => {
         />
       </>
     )
-    const actual = nodesToString(fragment.props.children)
+    const actual = nodesToMessage(fragment.props.children)
     expect(actual).toMatchInlineSnapshot(`
       {
         "components": {
-          "1": <React.Fragment />,
-          "2": <a
+          "0": <React.Fragment />,
+          "1": <a
             href="/more"
           />,
         },
-        "message": "{value, plural, offset:1 =0 {Zero items} few {<1>{count} items</1>} other {<2>A lot of them</2>}}",
+        "message": "{value, plural, offset:1 =0 {Zero items} few {<0>{count} items</0>} other {<1>A lot of them</1>}}",
         "values": {
           "count": 5,
           "value": 5,
@@ -297,20 +353,47 @@ describe("ICU Components", () => {
       }
     `)
   })
-
-  test("Should add Plural value to values", () => {
+  test("Should support Trans component in the options", () => {
     const count = 5
     const fragment = (
       <>
         <Plural
           value={count}
-          // todo: test with a Trans in the options
-          one="# book"
-          other="# books"
+          offset={1}
+          _0="Zero items"
+          few={
+            <NewTransNoContext lingui={{} as any}>
+              {{ count } as any} items
+            </NewTransNoContext>
+          }
+          other={<a href="/more">A lot of them</a>}
         />
       </>
     )
-    const actual = nodesToString(fragment.props.children)
+    const actual = nodesToMessage(fragment.props.children)
+    expect(actual).toMatchInlineSnapshot(`
+      {
+        "components": {
+          "0": <a
+            href="/more"
+          />,
+        },
+        "message": "{value, plural, offset:1 =0 {Zero items} few {{count} items} other {<0>A lot of them</0>}}",
+        "values": {
+          "count": 5,
+          "value": 5,
+        },
+      }
+    `)
+  })
+  test("Should add Plural value to values", () => {
+    const count = 5
+    const fragment = (
+      <>
+        <Plural value={count} one="# book" other="# books" />
+      </>
+    )
+    const actual = nodesToMessage(fragment.props.children)
     expect(actual).toMatchInlineSnapshot(`
       {
         "components": {},
@@ -329,7 +412,10 @@ describe("ICU Components", () => {
       <>
         <Select
           id="msg.select"
-          context={""}
+          context={"Context!"}
+          comment={"hello"}
+          component={(props) => null}
+          // render={() => null as unknown as ReactElement}
           value={value}
           _male="He"
           _female={`She`}
@@ -337,16 +423,14 @@ describe("ICU Components", () => {
         />
       </>
     )
-    const actual = nodesToString(fragment.props.children)
+    const actual = nodesToMessage(fragment.props.children)
 
-    // todo: currently component will print id="msg.select" to icu string which is incorrect
-    //   see thoughts on the bottom, may be need to drop this properties completely
     expect(actual).toMatchInlineSnapshot(`
       {
         "components": {
-          "1": <strong />,
+          "0": <strong />,
         },
-        "message": "{value, select, male {He} female {She} other {<1>Other</1>}}",
+        "message": "{value, select, male {He} female {She} other {<0>Other</0>}}",
         "values": {
           "value": "female",
         },
@@ -366,13 +450,13 @@ describe("ICU Components", () => {
         />
       </>
     )
-    const actual = nodesToString(fragment.props.children)
+    const actual = nodesToMessage(fragment.props.children)
     expect(actual).toMatchInlineSnapshot(`
       {
         "components": {
-          "1": <strong />,
+          "0": <strong />,
         },
-        "message": "{value, selectordinal, one {#st} two {#nd} other {<1>#rd</1>}}",
+        "message": "{value, selectordinal, one {#st} two {#nd} other {<0>#rd</0>}}",
         "values": {
           "value": 5,
         },
@@ -397,7 +481,3 @@ describe("ICU Components", () => {
 // few={`${count} items`} is not supported, instead should be a fragment few={<>{{ count }} items</>}
 
 // what would be if we will have few plural expressions in one message? They will clash values
-
-// always wrap all icu into Trans?
-// it doesn't make sense to have a context (and other common props) and comment on a Plural since they could be a part
-// of bigger expression <Trans context><Plural context/></Trans>

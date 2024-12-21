@@ -313,6 +313,58 @@ describe("Trans component", () => {
         ).toMatchInlineSnapshot(`"This is my <strong>5rd</strong> cat."`)
       })
     })
+
+    describe("ICU Components without wrapping Trans", () => {
+      it("should render Plural", () => {
+        const count = 5
+
+        expect(
+          html(
+            <Plural
+              lingui={{ i18n }}
+              value={count}
+              offset={1}
+              _0="Zero items"
+              // todo: test with a Trans in the options
+              few={<>{{ count }} items</>}
+              other={<a href="/more">A lot of them</a>}
+            />
+          )
+        ).toMatchInlineSnapshot(`"5 items"`)
+      })
+
+      xit("should render Select", () => {
+        const value = "female"
+
+        expect(
+          html(
+            <Select
+              lingui={{ i18n }}
+              id="msg.select"
+              value={value}
+              _male="He"
+              _female={`She`}
+              other={<strong>Other</strong>}
+            />
+          )
+        ).toMatchInlineSnapshot(`"She"`)
+      })
+      xit("should render SelectOrdinal", () => {
+        const count = 5
+
+        expect(
+          html(
+            <SelectOrdinal
+              lingui={{ i18n }}
+              value={count}
+              one="#st"
+              two={`#nd`}
+              other={<strong>#rd</strong>}
+            />
+          )
+        ).toMatchInlineSnapshot(`"This is my <strong>5rd</strong> cat."`)
+      })
+    })
   })
 
   describe("Trans with message", () => {

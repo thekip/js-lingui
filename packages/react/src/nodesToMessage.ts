@@ -1,5 +1,6 @@
 import { cloneElement, isValidElement, ReactNode } from "react"
-import { getLinguiToMessageFn, isLinguiComponent } from "./meta-utils"
+import { getLinguiToMessageFn, hasToMessageFn } from "./meta-utils"
+import { MessageCtx } from "./MessageCtx"
 
 type ReactChildren = ReactNode | ReactNode[]
 
@@ -8,13 +9,8 @@ const isObject = (obj: unknown): obj is object =>
   typeof obj === "object" && obj !== null
 const isFunction = (f: unknown): f is Function => typeof f === "function"
 
-const makeCounter =
-  (index = 0) =>
-  () =>
-    index++
-
-export const nodesToString = (children: ReactChildren) => {
-  const ctx = new Ctx()
+export const nodesToMessage = (children: ReactChildren) => {
+  const ctx = new MessageCtx()
   const message = _nodesToString(children, ctx)
 
   return {
@@ -24,13 +20,7 @@ export const nodesToString = (children: ReactChildren) => {
   }
 }
 
-class Ctx {
-  elementIndex = makeCounter()
-  components: Record<string, ReactNode> = {}
-  values: Record<string, unknown> = {}
-}
-
-const _nodesToString = (children: ReactChildren, ctx: Ctx) => {
+const _nodesToString = (children: ReactChildren, ctx: MessageCtx) => {
   if (!children) return ""
 
   let stringNode = ""
@@ -48,12 +38,7 @@ const _nodesToString = (children: ReactChildren, ctx: Ctx) => {
       const { props } = child
       // important: we want to create index for parent before
       // iterating the children
-      const elemIndex = ctx.elementIndex()
-
-      // regular case mapping the inner children
-      const content = _nodesToString(props.children, ctx)
-
-      if (isFunction(child.type) && isLinguiComponent(child.type as any)) {
+      if (isFunction(child.type) && hasToMessageFn(child.type as any)) {
         const toMessage = getLinguiToMessageFn(child.type as any)
 
         stringNode += toMessage(
@@ -62,15 +47,14 @@ const _nodesToString = (children: ReactChildren, ctx: Ctx) => {
           ctx
         )
       } else {
+        const elemIndex = ctx.componentsIndex()
+
+        // regular case mapping the inner children
+        const content = _nodesToString(props.children, ctx)
+
         ctx.components[elemIndex] = cloneElement(child, props, null)
 
         if (!content) {
-          // actual e.g. lorem <hr className="test" /> ipsum
-          // expected e.g. lorem <0/> ipsum
-          // or
-          // we got a dynamic list like
-          // e.g. <ul i18nIsDynamicList>{['a', 'b'].map(item => ( <li key={item}>{item}</li> ))}</ul>
-          // expected e.g. "<0/>", not e.g. "<0><0>a</0><1>b</1></0>"
           stringNode += `<${elemIndex}/>`
         } else {
           stringNode += `<${elemIndex}>${content}</${elemIndex}>`
@@ -87,7 +71,7 @@ const _nodesToString = (children: ReactChildren, ctx: Ctx) => {
 
       if (keys.length === 1) {
         const varName = keys[0]!
-        ctx.values[varName] = rest[varName]
+        ctx.addValue(varName, rest[varName])
         stringNode += `{${varName}}`
       } else {
         // not a valid interpolation object (can only contain one value)
