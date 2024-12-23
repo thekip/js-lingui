@@ -1,8 +1,12 @@
-import React, { ComponentType, ReactNode } from "react"
+import React, { ComponentType } from "react"
+import { generateMessageId } from "@lingui/message-utils/generateMessageId"
 
 import { formatElements } from "./format"
 import type { MessageOptions } from "@lingui/core"
 import { I18n } from "@lingui/core"
+import { setLinguiToMessageFn } from "./meta-utils"
+import { nodesToMessage } from "./nodesToMessage"
+import { LinguiContextLike } from "./trans-types"
 
 export type TransRenderProps = {
   id: string
@@ -23,15 +27,47 @@ export type TransRenderCallbackOrComponent =
       render?: undefined
     }
 
-export type TransProps = {
+type TransWithChildrenProps = {
+  id?: string
+  context?: string
+  // todo: add support for {{placeholder}}
+  children: React.ReactNode
+}
+
+type TransWithMessageProps = {
   id: string
   message?: string
   values?: Record<string, unknown>
   components?: { [key: string]: React.ElementType | any }
+}
+
+export type TransProps = {
   formats?: MessageOptions["formats"]
   comment?: string
-  children?: React.ReactNode
-} & TransRenderCallbackOrComponent
+} & TransWithChildrenProps &
+  TransRenderCallbackOrComponent
+
+export function TransNoContext(
+  props: TransProps & {
+    lingui: LinguiContextLike
+  }
+): React.ReactElement<any, any> | null {
+  // TransWithChildren
+  const { children, id, context, ...restProps } = props
+  const { values, message, components } = nodesToMessage(children)
+
+  return (
+    <TransWithMessageNoContext
+      {...{
+        ...restProps,
+        values,
+        message,
+        components,
+        id: id || generateMessageId(message, context),
+      }}
+    />
+  )
+}
 
 /**
  * Version of `<Trans>` component without using a Provider/Context React feature.
@@ -39,11 +75,17 @@ export type TransProps = {
  *
  * @experimental the api of this component is not stabilized yet.
  */
-export function TransNoContext(
-  props: TransProps & {
-    lingui: { i18n: I18n; defaultComponent?: ComponentType<TransRenderProps> }
-  }
-): ReactNode {
+function TransWithMessageNoContext(
+  props: {
+    formats?: MessageOptions["formats"]
+    comment?: string
+    lingui: {
+      i18n: I18n
+      defaultComponent?: ComponentType<TransRenderProps>
+    }
+  } & TransWithMessageProps &
+    TransRenderCallbackOrComponent
+): React.ReactElement<any, any> | null {
   const {
     render,
     component,
@@ -99,7 +141,7 @@ export function TransNoContext(
   if (render === null || component === null) {
     // Although `string` is a valid react element, types only allow `Element`
     // Upstream issue: https://github.com/DefinitelyTyped/DefinitelyTyped/issues/20544
-    return translation
+    return translation as unknown as React.ReactElement<any, any>
   }
 
   const FallbackComponent: React.ComponentType<TransRenderProps> =
@@ -147,3 +189,7 @@ const RenderFragment = ({ children }: TransRenderProps) => {
   // cannot use React.Fragment directly because we're passing in props that it doesn't support
   return <React.Fragment>{children}</React.Fragment>
 }
+
+setLinguiToMessageFn(TransNoContext, (props, nodesToString) => {
+  return nodesToString((props as TransWithChildrenProps).children)
+})

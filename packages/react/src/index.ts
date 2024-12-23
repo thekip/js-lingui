@@ -9,3 +9,6 @@ export type {
   TransRenderProps,
   TransRenderCallbackOrComponent,
 } from "./TransNoContext"
+
+export type { SelectChoiceProps, PluralChoiceProps } from "./Macro"
+export { Plural, Select, SelectOrdinal } from "./Macro"

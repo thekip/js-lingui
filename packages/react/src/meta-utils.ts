@@ -9,7 +9,7 @@ export type LinguiToMessage<T> = (
   ctx: MessageCtx
 ) => string
 
-// todo: add PURE annotation
+/* @__PURE__ */
 export function setLinguiToMessageFn<T>(
   component: FC<T>,
   toMessage: LinguiToMessage<T>

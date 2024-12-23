@@ -2,7 +2,6 @@ import { nodesToMessage } from "./nodesToMessage"
 import React, { PropsWithChildren } from "react"
 import { getConsoleMockCalls, mockConsole } from "@lingui/jest-mocks"
 import { generateMessageId } from "@lingui/message-utils/generateMessageId"
-import { NewTransNoContext, Plural, Select, SelectOrdinal } from "./TransNew"
 import { setLinguiToMessageFn } from "./meta-utils"
 
 describe("trans nodesToMessage", () => {
@@ -236,7 +235,7 @@ describe("Macro compatibility", () => {
           My name is{" "}
           <a href="/about">
             {" "}
-            <em>{{ name }}</em>
+            <em>{{ name } as any}</em>
           </a>
         </p>
       </>
@@ -319,150 +318,6 @@ test("Should use toMessage function of the custom component", () => {
       },
     }
   `)
-})
-
-describe("ICU Components", () => {
-  test("Should expand Plural component into icu string", () => {
-    const count = 5
-    const fragment = (
-      <>
-        <Plural
-          value={count}
-          offset={1}
-          _0="Zero items"
-          // todo: test with a Trans in the options
-          few={<>{{ count }} items</>}
-          other={<a href="/more">A lot of them</a>}
-        />
-      </>
-    )
-    const actual = nodesToMessage(fragment.props.children)
-    expect(actual).toMatchInlineSnapshot(`
-      {
-        "components": {
-          "0": <React.Fragment />,
-          "1": <a
-            href="/more"
-          />,
-        },
-        "message": "{value, plural, offset:1 =0 {Zero items} few {<0>{count} items</0>} other {<1>A lot of them</1>}}",
-        "values": {
-          "count": 5,
-          "value": 5,
-        },
-      }
-    `)
-  })
-  test("Should support Trans component in the options", () => {
-    const count = 5
-    const fragment = (
-      <>
-        <Plural
-          value={count}
-          offset={1}
-          _0="Zero items"
-          few={
-            <NewTransNoContext lingui={{} as any}>
-              {{ count } as any} items
-            </NewTransNoContext>
-          }
-          other={<a href="/more">A lot of them</a>}
-        />
-      </>
-    )
-    const actual = nodesToMessage(fragment.props.children)
-    expect(actual).toMatchInlineSnapshot(`
-      {
-        "components": {
-          "0": <a
-            href="/more"
-          />,
-        },
-        "message": "{value, plural, offset:1 =0 {Zero items} few {{count} items} other {<0>A lot of them</0>}}",
-        "values": {
-          "count": 5,
-          "value": 5,
-        },
-      }
-    `)
-  })
-  test("Should add Plural value to values", () => {
-    const count = 5
-    const fragment = (
-      <>
-        <Plural value={count} one="# book" other="# books" />
-      </>
-    )
-    const actual = nodesToMessage(fragment.props.children)
-    expect(actual).toMatchInlineSnapshot(`
-      {
-        "components": {},
-        "message": "{value, plural, one {# book} other {# books}}",
-        "values": {
-          "value": 5,
-        },
-      }
-    `)
-  })
-
-  test("Should expand Select component into icu string", () => {
-    const value = "female"
-
-    const fragment = (
-      <>
-        <Select
-          id="msg.select"
-          context={"Context!"}
-          comment={"hello"}
-          component={(props) => null}
-          // render={() => null as unknown as ReactElement}
-          value={value}
-          _male="He"
-          _female={`She`}
-          other={<strong>Other</strong>}
-        />
-      </>
-    )
-    const actual = nodesToMessage(fragment.props.children)
-
-    expect(actual).toMatchInlineSnapshot(`
-      {
-        "components": {
-          "0": <strong />,
-        },
-        "message": "{value, select, male {He} female {She} other {<0>Other</0>}}",
-        "values": {
-          "value": "female",
-        },
-      }
-    `)
-  })
-
-  test("Should expand SelectOrdinal component into icu string", () => {
-    const count = 5
-    const fragment = (
-      <>
-        <SelectOrdinal
-          value={count}
-          one="#st"
-          two={`#nd`}
-          other={<strong>#rd</strong>}
-        />
-      </>
-    )
-    const actual = nodesToMessage(fragment.props.children)
-    expect(actual).toMatchInlineSnapshot(`
-      {
-        "components": {
-          "0": <strong />,
-        },
-        "message": "{value, selectordinal, one {#st} two {#nd} other {<0>#rd</0>}}",
-        "values": {
-          "value": 5,
-        },
-      }
-    `)
-  })
 })
 
 // todo: extractor will produce here "lorem <0>{0}</0> ipsum"

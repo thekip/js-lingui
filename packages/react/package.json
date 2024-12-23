@@ -63,6 +63,16 @@
         "default": "./dist/server.mjs"
       }
     },
+    "./no-context": {
+      "require": {
+        "types": "./dist/no-context.d.ts",
+        "default": "./dist/no-context.cjs"
+      },
+      "import": {
+        "types": "./dist/no-context.d.ts",
+        "default": "./dist/no-context.mjs"
+      }
+    },
     "./macro": {
       "types": "./macro/index.d.ts",
       "default": "./macro/index.js"

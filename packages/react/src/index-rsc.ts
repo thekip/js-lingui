@@ -7,7 +7,16 @@ export type {
 import type { I18nContext } from "./I18nProvider"
 import { getI18n } from "./server"
 
-export { TransRsc as Trans } from "./TransRsc"
+export { TransRsc as Trans } from "./rsc/TransRsc"
+export {
+  PluralRsc as Plural,
+  SelectRsc as Select,
+  SelectOrdinalRsc as SelectOrdinal,
+} from "./rsc/MacroRsc"
+
+export type { SelectChoiceProps, PluralChoiceProps } from "./MacroNoContext"
+
+// todo add a fake provider and fake context in case if someone requested Provider from RSC context
 
 export function useLingui(): I18nContext {
   const ctx = getI18n()

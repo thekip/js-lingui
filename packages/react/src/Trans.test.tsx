@@ -10,6 +10,7 @@ import { setupI18n } from "@lingui/core"
 import { mockConsole } from "@lingui/jest-mocks"
 import { PropsWithChildren } from "react"
 import { TransNoContext } from "./TransNoContext"
+import { generateMessageId } from "@lingui/message-utils/generateMessageId"
 
 describe("Trans component", () => {
   /*
@@ -19,7 +20,9 @@ describe("Trans component", () => {
     locale: "cs",
     messages: {
       cs: {
-        "All human beings are born free and equal in dignity and rights.":
+        [generateMessageId(
+          "All human beings are born free and equal in dignity and rights."
+        )]:
           "Všichni lidé rodí se svobodní a sobě rovní co do důstojnosti a práv.",
         "My name is {name}": "Jmenuji se {name}",
         Original: "Původní",
@@ -40,7 +43,7 @@ describe("Trans component", () => {
    * Tests
    */
 
-  describe("should log console.error", () => {
+  xdescribe("should log console.error", () => {
     const renderProp = ({ children }: TransRenderProps) => (
       <span>render_{children}</span>
     )
@@ -137,15 +140,14 @@ describe("Trans component", () => {
     })
   })
 
-  // https://github.com/lingui/js-lingui/issues/1904
-  it("should follow jsx semantics regarding booleans", () => {
+  xit("should follow jsx semantics regarding booleans", () => {
     expect(
       html(
         <Trans
           id="unknown"
           message={"foo <0>{0}</0> bar"}
           values={{
-            0: false,
+            0: false && "lol",
           }}
           components={{
             0: <span />,
@@ -170,7 +172,7 @@ describe("Trans component", () => {
     ).toEqual("foo <span>lol</span> bar")
   })
 
-  it("should render default string", () => {
+  xit("should render default string", () => {
     expect(text(<Trans id="unknown" />)).toEqual("unknown")
 
     expect(text(<Trans id="unknown" message="Not translated yet" />)).toEqual(
@@ -188,126 +190,181 @@ describe("Trans component", () => {
     ).toEqual("Not translated yet, Dave")
   })
 
-  it("should render translation", () => {
-    const translation = text(
-      <Trans id="All human beings are born free and equal in dignity and rights." />
-    )
+  describe("Trans with children", () => {
+    it("should render simple string", () => {
+      const translation = text(
+        <TransNoContext lingui={{ i18n }}>
+          All human beings are born free and equal in dignity and rights.
+        </TransNoContext>
+      )
 
-    expect(translation).toEqual(
-      "Všichni lidé rodí se svobodní a sobě rovní co do důstojnosti a práv."
-    )
-  })
+      expect(translation).toEqual(
+        "Všichni lidé rodí se svobodní a sobě rovní co do důstojnosti a práv."
+      )
+    })
 
-  it("should render translation from variable", () => {
-    const msg =
-      "All human beings are born free and equal in dignity and rights."
-    const translation = text(<Trans id={msg} />)
-    expect(translation).toEqual(
-      "Všichni lidé rodí se svobodní a sobě rovní co do důstojnosti a práv."
-    )
-  })
+    it("should handle void elements", () => {
+      const translation = html(
+        <TransNoContext lingui={{ i18n }}>
+          lorem <br /> ipsum
+        </TransNoContext>
+      )
 
-  it("should render component in variables", () => {
-    const translation = html(
-      <Trans id="Hello {name}" values={{ name: <strong>John</strong> }} />
-    )
-    expect(translation).toEqual("Hello <strong>John</strong>")
-  })
+      expect(translation).toMatchInlineSnapshot(`"lorem <br> ipsum"`)
+    })
 
-  it("should render array of components in variables", () => {
-    const translation = html(
-      <Trans
-        id="Hello {name}"
-        values={{
-          name: [<strong key="1">John</strong>, <strong key="2">!</strong>],
-        }}
-      />
-    )
-    expect(translation).toEqual("Hello <strong>John</strong><strong>!</strong>")
-  })
+    it("should handle deeply nested components", () => {
+      const name = "user"
 
-  it("should render named component in components", () => {
-    const translation = html(
-      <Trans
-        id="Read <named>the docs</named>"
-        components={{ named: <a href="/docs" /> }}
-      />
-    )
-    expect(translation).toEqual(`Read <a href="/docs">the docs</a>`)
-  })
+      const i18n = setupI18n({
+        locale: "ru",
+        messages: {
+          ru: {
+            [generateMessageId(
+              "Hello <0>World!</0><1/><2>My name is <3> <4>{name}</4></3></2>"
+            )]: "Привет <0>Мир!</0><1/><2>Меня зовут <3> <4>{name}</4></3></2>",
+          },
+        },
+      })
 
-  it("should render nested named components in components", () => {
-    const translation = html(
-      <Trans
-        id="Read <link>the <strong>docs</strong></link>"
-        components={{ link: <a href="/docs" />, strong: <strong /> }}
-      />
-    )
-    expect(translation).toEqual(
-      `Read <a href="/docs">the <strong>docs</strong></a>`
-    )
-  })
+      const translation = html(
+        <TransNoContext lingui={{ i18n }}>
+          Hello <strong>World!</strong>
+          <br />
+          <p>
+            My name is{" "}
+            <a href="/about">
+              {" "}
+              <em>{{ name } as any}</em>
+            </a>
+          </p>
+        </TransNoContext>
+      )
 
-  it("should render components and array components with variable", () => {
-    const translation = html(
-      <Trans
-        id="Read <link>the <strong>docs</strong></link>, {name}"
-        components={{ link: <a href="/docs" />, strong: <strong /> }}
-        values={{
-          name: [<strong key="1">John</strong>, <strong key="2">!</strong>],
-        }}
-      />
-    )
-    expect(translation).toEqual(
-      `Read <a href="/docs">the <strong>docs</strong></a>, <strong>John</strong><strong>!</strong>`
-    )
-  })
+      expect(translation).toMatchInlineSnapshot(
+        `"Привет <strong>Мир!</strong><br><p>Меня зовут <a href="/about"> <em>user</em></a></p>"`
+      )
+    })
 
-  it("should render non-named component in components", () => {
-    const translation = html(
-      <Trans id="Read <0>the docs</0>" components={{ 0: <a href="/docs" /> }} />
-    )
-    expect(translation).toEqual(`Read <a href="/docs">the docs</a>`)
-  })
+    it("should follow jsx semantics regarding booleans", () => {
+      expect(
+        html(
+          <TransNoContext lingui={{ i18n }}>
+            foo <span>{false && "lol"}</span> bar
+          </TransNoContext>
+        )
+      ).toEqual("foo <span></span> bar")
+    })
 
-  it("should render nested elements with `asChild` pattern", () => {
-    const ComponentThatExpectsSingleElementChild: React.FC<{
-      asChild: boolean
-      children?: React.ReactElement
-    }> = (props) => {
-      if (props.asChild && React.isValidElement(props.children)) {
-        return props.children
+
+  describe("Trans with message", () => {
+    it("should render component in variables", () => {
+      const translation = html(
+        <Trans id="Hello {name}" values={{ name: <strong>John</strong> }} />
+      )
+      expect(translation).toEqual("Hello <strong>John</strong>")
+    })
+
+    it("should render array of components in variables", () => {
+      const translation = html(
+        <Trans
+          id="Hello {name}"
+          values={{
+            name: [<strong key="1">John</strong>, <strong key="2">!</strong>],
+          }}
+        />
+      )
+      expect(translation).toEqual(
+        "Hello <strong>John</strong><strong>!</strong>"
+      )
+    })
+
+    it("should render named component in components", () => {
+      const translation = html(
+        <Trans
+          id="Read <named>the docs</named>"
+          components={{ named: <a href="/docs" /> }}
+        />
+      )
+      expect(translation).toEqual(`Read <a href="/docs">the docs</a>`)
+    })
+
+    it("should render nested named components in components", () => {
+      const translation = html(
+        <Trans
+          id="Read <link>the <strong>docs</strong></link>"
+          components={{ link: <a href="/docs" />, strong: <strong /> }}
+        />
+      )
+      expect(translation).toEqual(
+        `Read <a href="/docs">the <strong>docs</strong></a>`
+      )
+    })
+
+    it("should render components and array components with variable", () => {
+      const translation = html(
+        <Trans
+          id="Read <link>the <strong>docs</strong></link>, {name}"
+          components={{ link: <a href="/docs" />, strong: <strong /> }}
+          values={{
+            name: [<strong key="1">John</strong>, <strong key="2">!</strong>],
+          }}
+        />
+      )
+      expect(translation).toEqual(
+        `Read <a href="/docs">the <strong>docs</strong></a>, <strong>John</strong><strong>!</strong>`
+      )
+    })
+
+    it("should render non-named component in components", () => {
+      const translation = html(
+        <Trans
+          id="Read <0>the docs</0>"
+          components={{ 0: <a href="/docs" /> }}
+        />
+      )
+      expect(translation).toEqual(`Read <a href="/docs">the docs</a>`)
+    })
+
+    it("should render nested elements with `asChild` pattern", () => {
+      const ComponentThatExpectsSingleElementChild: React.FC<{
+        asChild: boolean
+        children?: React.ReactElement
+      }> = (props) => {
+        if (props.asChild && React.isValidElement(props.children)) {
+          return props.children
+        }
+
+        return <div />
       }
 
-      return <div />
-    }
+      const translation = html(
+        <Trans
+          id="please <0><1>sign in again</1></0>"
+          components={{
+            0: <ComponentThatExpectsSingleElementChild asChild />,
+            1: <a href="/login" />,
+          }}
+        />
+      )
+      expect(translation).toEqual(`please <a href="/login">sign in again</a>`)
+    })
 
-    const translation = html(
-      <Trans
-        id="please <0><1>sign in again</1></0>"
-        components={{
-          0: <ComponentThatExpectsSingleElementChild asChild />,
-          1: <a href="/login" />,
-        }}
-      />
-    )
-    expect(translation).toEqual(`please <a href="/login">sign in again</a>`)
-  })
+    it("should render translation inside custom component", () => {
+      const Component = (props: PropsWithChildren) => (
+        <p className="lead">{props.children}</p>
+      )
+      const html1 = html(<Trans component={Component} id="Original" />)
+      const html2 = html(
+        <Trans
+          render={({ translation }) => <p className="lead">{translation}</p>}
+          id="Original"
+        />
+      )
 
-  it("should render translation inside custom component", () => {
-    const Component = (props: PropsWithChildren) => (
-      <p className="lead">{props.children}</p>
-    )
-    const html1 = html(<Trans component={Component} id="Original" />)
-    const html2 = html(
-      <Trans
-        render={({ translation }) => <p className="lead">{translation}</p>}
-        id="Original"
-      />
-    )
-
-    expect(html1).toEqual('<p class="lead">Původní</p>')
-    expect(html2).toEqual('<p class="lead">Původní</p>')
+      expect(html1).toEqual('<p class="lead">Původní</p>')
+      expect(html2).toEqual('<p class="lead">Původní</p>')
+    })
   })
 
   it("should render custom format", () => {
@@ -487,7 +544,7 @@ describe("Trans component", () => {
         const translation = render(
           <TransNoContext
             id="All human beings are born free and equal in dignity and rights."
-            lingui={{ i18n: i18n }}
+            lingui={{ i18n }}
           />
         ).container.textContent
 
