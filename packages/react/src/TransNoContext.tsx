@@ -1,4 +1,4 @@
-import React, { ComponentType } from "react"
+import React, { ComponentType, ReactNode } from "react"
 import { generateMessageId } from "@lingui/message-utils/generateMessageId"
 
 import { formatElements } from "./format"
@@ -124,7 +124,7 @@ function TransWithMessageNoContext(
       }
 
       // react components, arrays, falsy values, all should be processed as JSX children
-      components[index] = <>{values[key]}</>
+      components[index] = <>{values[key] as ReactNode}</>
       values[key] = `<${index}/>`
     })
   }
