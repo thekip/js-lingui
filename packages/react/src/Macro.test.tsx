@@ -22,7 +22,7 @@ describe("Macro Components", () => {
             <Trans>
               Here is{" "}
               <Plural
-                value={count}
+                value={{ count }}
                 offset={1}
                 _0="Zero items"
                 // todo: test with a Trans in the options
@@ -45,7 +45,7 @@ describe("Macro Components", () => {
                 id="msg.select"
                 context="context"
                 comment="hello"
-                value={value}
+                value={{ value }}
                 _male="He"
                 _female={`She`}
                 other={<strong>Other</strong>}
@@ -62,7 +62,7 @@ describe("Macro Components", () => {
             <Trans>
               This is my{" "}
               <SelectOrdinal
-                value={count}
+                value={{ count }}
                 one="#st"
                 two={`#nd`}
                 other={<strong>#rd</strong>}
@@ -81,7 +81,7 @@ describe("Macro Components", () => {
         expect(
           html(
             <Plural
-              value={count}
+              value={{ count }}
               offset={1}
               _0="Zero items"
               // todo: test with a Trans in the options
@@ -99,7 +99,7 @@ describe("Macro Components", () => {
           html(
             <Select
               id="msg.select"
-              value={value}
+              value={{ value }}
               _male="He"
               _female={`She`}
               other={<strong>Other</strong>}
@@ -114,7 +114,7 @@ describe("Macro Components", () => {
         expect(
           html(
             <SelectOrdinal
-              value={count}
+              value={{ count }}
               one="#st"
               two={`#nd`}
               other={<strong>#rd</strong>}

@@ -16,8 +16,10 @@ type CommonProps = TransRenderCallbackOrComponent & {
   context?: string
 }
 
+export type NamedPlaceholder<T> = Record<string, T>
+
 export type PluralChoiceProps = {
-  value: string | number
+  value: NamedPlaceholder<string | number>
   /** Offset of value when calculating plural forms */
   offset?: number
   zero?: ReactNode
@@ -33,7 +35,7 @@ export type PluralChoiceProps = {
 } & CommonProps
 
 export type SelectChoiceProps = {
-  value: string
+  value: NamedPlaceholder<string>
   /** Catch-all option */
   other: ReactNode
   [option: `_${string}`]: ReactNode
@@ -92,9 +94,8 @@ export function macroComponentToMessage(
   format: "plural" | "select" | "selectordinal"
 ): LinguiToMessage<PluralChoiceProps | SelectChoiceProps> {
   return (props, nodesToString, ctx) => {
-    const name = "value"
     const { value, ...options } = props
-    ctx.addValue(name, value)
+    const name = ctx.addValue(value)
 
     const formatOptions = Object.keys(options)
       .filter((key) => pluralRuleRe.test(key))

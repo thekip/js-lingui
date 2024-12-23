@@ -20,7 +20,7 @@ describe("Macro No Context Components", () => {
           <>
             <PluralNoContext
               lingui={{ i18n }}
-              value={count}
+              value={{ value: count }}
               offset={1}
               _0="Zero items"
               // todo: test with a Trans in the options
@@ -52,7 +52,7 @@ describe("Macro No Context Components", () => {
           <>
             <PluralNoContext
               lingui={{ i18n }}
-              value={count}
+              value={{ count }}
               offset={1}
               _0="Zero items"
               few={
@@ -66,19 +66,18 @@ describe("Macro No Context Components", () => {
         )
         const actual = nodesToMessage(fragment.props.children)
         expect(actual).toMatchInlineSnapshot(`
-                {
-                  "components": {
-                    "0": <a
-                      href="/more"
-                    />,
-                  },
-                  "message": "{value, plural, offset:1 =0 {Zero items} few {{count} items} other {<0>A lot of them</0>}}",
-                  "values": {
-                    "count": 5,
-                    "value": 5,
-                  },
-                }
-            `)
+          {
+            "components": {
+              "0": <a
+                href="/more"
+              />,
+            },
+            "message": "{count, plural, offset:1 =0 {Zero items} few {{count} items} other {<0>A lot of them</0>}}",
+            "values": {
+              "count": 5,
+            },
+          }
+        `)
       })
       test("Should add Plural value to values", () => {
         const count = 5
@@ -86,7 +85,7 @@ describe("Macro No Context Components", () => {
           <>
             <PluralNoContext
               lingui={{ i18n }}
-              value={count}
+              value={{ count }}
               one="# book"
               other="# books"
             />
@@ -94,14 +93,37 @@ describe("Macro No Context Components", () => {
         )
         const actual = nodesToMessage(fragment.props.children)
         expect(actual).toMatchInlineSnapshot(`
-                {
-                  "components": {},
-                  "message": "{value, plural, one {# book} other {# books}}",
-                  "values": {
-                    "value": 5,
-                  },
-                }
-            `)
+          {
+            "components": {},
+            "message": "{count, plural, one {# book} other {# books}}",
+            "values": {
+              "count": 5,
+            },
+          }
+        `)
+      })
+      test("Should add Plural value to values", () => {
+        const count = 5
+        const fragment = (
+          <>
+            <PluralNoContext
+              lingui={{ i18n }}
+              value={{ count }}
+              one="# book"
+              other="# books"
+            />
+          </>
+        )
+        const actual = nodesToMessage(fragment.props.children)
+        expect(actual).toMatchInlineSnapshot(`
+          {
+            "components": {},
+            "message": "{count, plural, one {# book} other {# books}}",
+            "values": {
+              "count": 5,
+            },
+          }
+        `)
       })
     })
     describe("Select", () => {
@@ -117,7 +139,7 @@ describe("Macro No Context Components", () => {
               comment={"hello"}
               component={(props) => null}
               // render={() => null as unknown as ReactElement}
-              value={value}
+              value={{ value }}
               _male="He"
               _female={`She`}
               other={<strong>Other</strong>}
@@ -146,7 +168,7 @@ describe("Macro No Context Components", () => {
           <>
             <SelectOrdinalNoContext
               lingui={{ i18n }}
-              value={count}
+              value={{ count }}
               one="#st"
               two={`#nd`}
               other={<strong>#rd</strong>}
@@ -155,16 +177,16 @@ describe("Macro No Context Components", () => {
         )
         const actual = nodesToMessage(fragment.props.children)
         expect(actual).toMatchInlineSnapshot(`
-                {
-                  "components": {
-                    "0": <strong />,
-                  },
-                  "message": "{value, selectordinal, one {#st} two {#nd} other {<0>#rd</0>}}",
-                  "values": {
-                    "value": 5,
-                  },
-                }
-            `)
+          {
+            "components": {
+              "0": <strong />,
+            },
+            "message": "{count, selectordinal, one {#st} two {#nd} other {<0>#rd</0>}}",
+            "values": {
+              "count": 5,
+            },
+          }
+        `)
       })
     })
   })
@@ -182,7 +204,7 @@ describe("Macro No Context Components", () => {
               Here is{" "}
               <PluralNoContext
                 lingui={{ i18n }}
-                value={count}
+                value={{ count }}
                 offset={1}
                 _0="Zero items"
                 // todo: test with a Trans in the options
@@ -206,7 +228,7 @@ describe("Macro No Context Components", () => {
                 id="msg.select"
                 context="context"
                 comment="hello"
-                value={value}
+                value={{ value }}
                 _male="He"
                 _female={`She`}
                 other={<strong>Other</strong>}
@@ -224,7 +246,7 @@ describe("Macro No Context Components", () => {
               This is my{" "}
               <SelectOrdinalNoContext
                 lingui={{ i18n }}
-                value={count}
+                value={{ count }}
                 one="#st"
                 two={`#nd`}
                 other={<strong>#rd</strong>}
@@ -244,7 +266,7 @@ describe("Macro No Context Components", () => {
           html(
             <PluralNoContext
               lingui={{ i18n }}
-              value={count}
+              value={{ count }}
               offset={1}
               _0="Zero items"
               // todo: test with a Trans in the options
@@ -263,7 +285,7 @@ describe("Macro No Context Components", () => {
             <SelectNoContext
               lingui={{ i18n }}
               id="msg.select"
-              value={value}
+              value={{ value }}
               _male="He"
               _female={`She`}
               other={<strong>Other</strong>}
@@ -279,7 +301,7 @@ describe("Macro No Context Components", () => {
           html(
             <SelectOrdinalNoContext
               lingui={{ i18n }}
-              value={count}
+              value={{ count }}
               one="#st"
               two={`#nd`}
               other={<strong>#rd</strong>}

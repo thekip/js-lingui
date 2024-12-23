@@ -9,8 +9,7 @@ export type LinguiToMessage<T> = (
   ctx: MessageCtx
 ) => string
 
-/* @__PURE__ */
-export function setLinguiToMessageFn<T>(
+export /* @__PURE__ */ function setLinguiToMessageFn<T>(
   component: FC<T>,
   toMessage: LinguiToMessage<T>
 ) {

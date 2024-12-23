@@ -334,5 +334,3 @@ test("Should use toMessage function of the custom component", () => {
 //   other={<a href="/more">A lot of them</a>}
 // />
 // few={`${count} items`} is not supported, instead should be a fragment few={<>{{ count }} items</>}
-
-// what would be if we will have few plural expressions in one message? They will clash values

@@ -5,8 +5,9 @@ import { MessageCtx } from "./MessageCtx"
 type ReactChildren = ReactNode | ReactNode[]
 
 const isString = (obj: unknown): obj is string => typeof obj === "string"
-const isObject = (obj: unknown): obj is object =>
+const isObject = (obj: unknown): obj is Record<string, unknown> =>
   typeof obj === "object" && obj !== null
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 const isFunction = (f: unknown): f is Function => typeof f === "function"
 
 export const nodesToMessage = (children: ReactChildren) => {
@@ -65,20 +66,10 @@ const _nodesToString = (children: ReactChildren, ctx: MessageCtx) => {
         `Trans: the passed in value is invalid - seems you passed in a null child.`
       )
     } else if (isObject(child)) {
-      // e.g. lorem {{ value, format }} ipsum
-      const { ...rest } = child as unknown as Record<string, unknown>
-      const keys = Object.keys(rest)
-
-      if (keys.length === 1) {
-        const varName = keys[0]!
-        ctx.addValue(varName, rest[varName])
+      // e.g. lorem {{ value }} ipsum
+      const varName = ctx.addValue(child)
+      if (varName) {
         stringNode += `{${varName}}`
-      } else {
-        // not a valid interpolation object (can only contain one value)
-        console.warn(
-          `Trans: the passed in object contained more than one variable - the object should look like {{ value }}.`,
-          child
-        )
       }
     } else {
       console.warn(
